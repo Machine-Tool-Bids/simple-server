@@ -7,7 +7,19 @@ const firestore = firebase.firestore();
 
 const addStudent = async (req, res, next) => {
     try {
-        const data = req.body;
+        const data = {
+            id: 1,
+            firstName: "Bob",
+            lastName: "Smith",
+            fatherName: "Frank",
+            classEnrolled: "2015",
+            age: "17",
+            phoneNumber: "8471234567",
+            subject: "Math",
+            year: "1st",
+            semester: "Winter",
+            status: "enrolled"
+        };
         await firestore.collection('students').doc().set(data);
         res.send('Record saved successfuly');
     } catch (error) {
