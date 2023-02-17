@@ -28,9 +28,6 @@ const addUniqueSession = async (req, res, next) => {
       if (doc.data().session === req.query.session) {
         doc.update({
           end: req.query.time,
-          user: req.query.user,
-          url: req.query.url,
-          session: req.query.session,
         });
         changedSession = true;
       }
