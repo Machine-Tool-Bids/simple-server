@@ -26,7 +26,7 @@ const addUniqueSession = async (req, res, next) => {
     let changedSession = false;
     await mySessions.forEach((doc) => {
       if (doc.data().session === req.query.session) {
-        doc.update({
+        doc.ref.update({
           end: req.query.time,
         });
         changedSession = true;
