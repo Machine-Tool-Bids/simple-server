@@ -24,6 +24,7 @@ const addUniqueSession = async (req, res, next) => {
     const sessions = await firestore.collection("sessions");
     let mySessions = await sessions.get();
     let changedSession = false;
+    console.log(req.query.session);
     if (req.query.session != "undefined")
       await mySessions.forEach((doc) => {
         if (doc.data().session === req.query.session) {
