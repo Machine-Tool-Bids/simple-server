@@ -25,7 +25,7 @@ const addUniqueSession = async (req, res, next) => {
     let mySessions = await sessions.get();
     let changedSession = false;
     console.log(req.query.session);
-    if (req.query.session != "undefined")
+    if (req.query.session != "undefined") {
       await mySessions.forEach((doc) => {
         if (doc.data().session === req.query.session) {
           doc.ref.update({
@@ -34,45 +34,18 @@ const addUniqueSession = async (req, res, next) => {
           changedSession = true;
         }
       });
-    if (!changedSession) {
-      let data = {
-        start: req.query.time,
-        end: req.query.time,
-        user: req.query.user,
-        url: req.query.url,
-        session: req.query.session,
-      };
-      await firestore.collection("sessions").doc().set(data);
-    }
-<<<<<<< HEAD
-}
-
-const addUniqueSession2 = async (req, res, next) => {
-    try {
+      if (!changedSession) {
         let data = {
-            start: req.query.start,
-            end: req.query.end,
-            user: req.query.user,
-            end: req.query.end,
-            url: req.query.url,
-            session: req.query.session
-        }
-        await firestore.collection('sessions2').doc().set(data);
-        res.send('Record saved successfuly');
-    } catch (error) {
-        res.status(400).send(error.message);
+          start: req.query.time,
+          end: req.query.time,
+          user: req.query.user,
+          url: req.query.url,
+          session: req.query.session,
+        };
+        await firestore.collection("sessions").doc().set(data);
+      }
+      res.send("Record saved successfuly");
     }
-}
-
-
-
-module.exports = {
-    addSession,
-    addUniqueSession,
-    addUniqueSession2
-}
-=======
-    res.send("Record saved successfuly");
   } catch (error) {
     res.status(400).send(error.message);
   }
