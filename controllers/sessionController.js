@@ -21,29 +21,29 @@ const addSession = async (req, res, next) => {
 
 const addUniqueSession = async (req, res, next) => {
   try {
-    let sessions = await sessions.get();
+    const sessions = await firestore.collection("sessions");
+    let mySessions = await sessions.get();
     let changedSession = false;
-    await sessions.forEach((doc) => {
-      if (sessions.data().session === req.query.session) {
+    await mySessions.forEach((doc) => {
+      if (mySessions.data().session === req.query.session) {
         doc.update({
           end: req.query.time,
           user: req.query.user,
-          end: req.query.end,
           url: req.query.url,
           session: req.query.session,
         });
         changedSession = true;
       }
     });
-    if(!changedSession) {
-        let data = {
+    if (!changedSession) {
+      let data = {
         start: req.query.time,
         end: req.query.time,
         user: req.query.user,
         url: req.query.url,
         session: req.query.session,
-        };
-        await firestore.collection("sessions").doc().set(data);
+      };
+      await firestore.collection("sessions").doc().set(data);
     }
     res.send("Record saved successfuly");
   } catch (error) {
