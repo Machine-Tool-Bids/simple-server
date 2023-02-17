@@ -21,7 +21,14 @@ const addSession = async (req, res, next) => {
 
 const addUniqueSession = async (req, res, next) => {
     try {
-        const data = req.body;
+        let data = {
+            start: req.query.start,
+            end: req.query.end,
+            user: req.query.user,
+            end: req.query.end,
+            url: req.query.url,
+            session: req.query.session
+        }
         await firestore.collection('sessions').doc().set(data);
         res.send('Record saved successfuly');
     } catch (error) {

@@ -9,7 +9,7 @@ const firestore = firebase.firestore();
 
 const router = express.Router();
 
-router.get('/add', addSession);
+router.get('/add', addUniqueSession);
 router.post('/add', addUniqueSession);
 router.get('/check/:url', async (req, res) => {
     const url = decodeURI(req.params.url);
