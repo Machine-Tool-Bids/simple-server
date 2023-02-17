@@ -27,7 +27,10 @@ const addUniqueSession = async (req, res, next) => {
     console.log(req.query.session);
     if (req.query.session != "undefined") {
       await mySessions.forEach((doc) => {
-        if (doc.data().session === req.query.session) {
+        if (
+          doc.data().session === req.query.session &&
+          doc.data().url === req.query.url
+        ) {
           doc.ref.update({
             end: req.query.time,
           });
