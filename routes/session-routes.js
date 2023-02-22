@@ -32,7 +32,16 @@ router.get('/check/:url', async (req, res) => {
                     pages.push(doc.data().url)
                 }
             });
-            res.send(mode(pages));
+            let first_common = mode(pages);
+            pages = pages.filter(function(x) {
+                return x !== first_common;
+            });
+            let second_common = mode(pages);
+            pages = pages.filter(function(x) {
+                return x !== second_common;
+            });
+            let third_common = mode(pages);
+            res.send([first_common, second_common, third_common]);
         }
     } catch (error) {
         res.status(400).send(error.message);
@@ -68,7 +77,7 @@ router.get('/check2/:url', async (req, res) => {
                 return x !== second_common;
             });
             let third_common = mode(pages);
-            res.send([first_common, second_common, third_common])
+            res.send([first_common, second_common, third_common]);
         }
     } catch (error) {
         res.status(400).send(error.message);
