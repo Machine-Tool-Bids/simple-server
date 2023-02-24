@@ -54,8 +54,43 @@ const addUniqueSession = async (req, res, next) => {
   }
 };
 
+const addUniqueSession2 = async (req, res, next) => {
+  try {
+    const sessions = await firestore.collection("sessions2");
+    let mySessions = await sessions.get();
+    let changedSession = false;
+    console.log(req.query.session);
+    if (req.query.session != "undefined") {
+      await mySessions.forEach((doc) => {
+        if (
+          doc.data().session === req.query.session &&
+          doc.data().url === req.query.url
+        ) {
+          doc.ref.update({
+            end: req.query.time,
+          });
+          changedSession = true;
+        }
+      });
+      if (!changedSession) {
+        let data = {
+          start: req.query.time,
+          end: req.query.time,
+          user: req.query.user,
+          url: req.query.url,
+          session: req.query.session,
+        };
+        await firestore.collection("sessions2").doc().set(data);
+      }
+      res.send("Record saved successfuly");
+    }
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+};
+
 module.exports = {
   addSession,
   addUniqueSession,
+  addUniqueSession2,
 };
->>>>>>> a6eec8f811eb7fb40e39911e82e06094078083f7
