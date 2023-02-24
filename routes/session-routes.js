@@ -1,7 +1,8 @@
 const express = require('express');
 const {
         addSession,
-        addUniqueSession
+        addUniqueSession,
+        addUniqueSession2
     } = require('../controllers/sessionController');
 const Session = require('../models/session');
 const firebase = require('../db');
