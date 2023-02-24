@@ -22,7 +22,7 @@ router.get('/check/:url', async (req, res) => {
         let pages = [];
         if(data.empty) {
             res.status(404).send('No session record found');
-        }else {
+        } else {
             data.forEach(doc => {
                 if(doc.data().url === url) {
                     sessionsArray.push(doc.data().session);
