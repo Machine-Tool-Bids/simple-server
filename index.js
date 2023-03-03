@@ -1,10 +1,10 @@
-'use strict';
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const config = require('./config');
-const studentRoutes = require('./routes/student-routes');
-const sessionRoutes = require('./routes/session-routes');
+"use strict";
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const config = require("./config");
+const studentRoutes = require("./routes/student-routes");
+const sessionRoutes = require("./routes/session-routes");
 var sql = require("mssql");
 const app = express();
 
@@ -17,40 +17,34 @@ app.use(
 );
 app.use(bodyParser.json());
 
-app.use('/api', studentRoutes.routes);
-app.use('/session', sessionRoutes.routes);
+app.use("/api", studentRoutes.routes);
+app.use("/session", sessionRoutes.routes);
 
-app.get('/', function (req, res) {
+app.get("/", function (req, res) {
+  // config for your database
+  var config = {
+    user: "Cmontgomery",
+    password: "1626Wlake@mmi!",
+    server: "mtb-rainworx-auction-database.database.windows.net",
+    database: "MTBAuctionHotfixDB",
+  };
 
-    // config for your database
-    var config = {
-        user: 'sa',
-        password: 'mypassword',
-        server: 'localhost', 
-        database: 'SchoolDB' 
-    };
+  // connect to your database
+  sql.connect(config, function (err) {
+    if (err) console.log(err);
 
-    // connect to your database
-    sql.connect(config, function (err) {
-    
-        if (err) console.log(err);
+    // create Request object
+    var request = new sql.Request();
 
-        // create Request object
-        var request = new sql.Request();
-           
-        // query to the database and get the records
-        request.query('select * from Student', function (err, recordset) {
-            
-            if (err) console.log(err)
+    // query to the database and get the records
+    request.query("select * from vw_lot_result", function (err, recordset) {
+      if (err) console.log(err);
 
-            // send records as a response
-            res.send(recordset);
-            
-        });
+      // send records as a response
+      res.send(recordset);
     });
+  });
 });
-
-
 
 app.listen(config.port, () =>
   console.log("App is listening on url http://localhost:" + config.port)

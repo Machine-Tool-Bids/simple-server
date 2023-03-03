@@ -9,6 +9,50 @@ const firebase = require("../db");
 const firestore = firebase.firestore();
 
 const router = express.Router();
+var sql = require("mssql");
+
+var config = {
+  user: "Cmontgomery",
+  password: "1626Wlake@mmi!",
+  server: "mtb-rainworx-auction-database.database.windows.net",
+  database: "MTBAuctionHotfixDB",
+};
+
+let binarySearch = function (arr, x, start, end) {
+  // Base Condition
+  if (start > end) return false;
+
+  // Find the middle index
+  let mid = Math.floor((start + end) / 2);
+
+  // Compare mid with given key x
+  if (arr[mid].Id === x) return arr[mid];
+
+  // If element at mid is greater than x,
+  // search in the left half of mid
+  if (arr[mid].Id > x) return binarySearch(arr, x, start, mid - 1);
+  // If element at mid is smaller than x,
+  // search in the right half of mid
+  else return binarySearch(arr, x, mid + 1, end);
+};
+
+let binarySearchListing = function (arr, x, start, end) {
+  // Base Condition
+  if (start > end) return false;
+
+  // Find the middle index
+  let mid = Math.floor((start + end) / 2);
+
+  // Compare mid with given key x
+  if (arr[mid].listing_id === x) return arr[mid];
+
+  // If element at mid is greater than x,
+  // search in the left half of mid
+  if (arr[mid].listing_id > x) return binarySearch(arr, x, start, mid - 1);
+  // If element at mid is smaller than x,
+  // search in the right half of mid
+  else return binarySearch(arr, x, mid + 1, end);
+};
 
 router.get("/add", addUniqueSession);
 router.get("/dashboard", async (req, res) => {
@@ -143,7 +187,7 @@ router.get("/item-item-table", async (req, res) => {
   const sessions = await firestore.collection("sessions");
   const data = await sessions.get();
   let table_values =
-    "<table><tr><th>Item</th><th>1st Most Similar</th><th>Similarity</th><th>2nd Most Similar</th><th>Similarity</th><th>3rd Most Similar</th><th>Similarity</th></tr>";
+    "<a href='/session/popular-items'>Popular items</a><table><tr><th>Item</th><th>1st Most Similar</th><th>Similarity</th><th>2nd Most Similar</th><th>Similarity</th><th>3rd Most Similar</th><th>Similarity</th></tr>";
   let url_array = [];
   data.forEach((doc) => {
     if (
@@ -341,6 +385,262 @@ router.get("/auction-item-table", async (req, res) => {
   table_values +=
     "</table><style>table { font-size: 12px; } table, th, tr { border: 1px solid black; border-collapse: collapse; font-weight: 400; } tr:first-of-type th {font-weight: bold; } </style>";
   res.send(table_values);
+});
+
+router.get("/popular-items", async (req, res) => {
+  sql.connect(config, async (err) => {
+    if (err) console.log(err);
+
+    // create Request object
+    var request = new sql.Request();
+
+    // query to the database and get the records
+    let time = new Date();
+    let results = await request.query(
+      "SELECT Id, Title FROM RWX_AuctionEvents ORDER BY Id ASC"
+    );
+    let total_items = "";
+    results = results["recordset"];
+    total_items = total_items["recordset"];
+    const sessions = await firestore.collection("sessions");
+    const data = await sessions.get();
+    let table_values = "<table><tr><th>Item</th><th>Popularity</th>";
+    let url_dict = {};
+    let auctions = [];
+    let used_ids = [];
+    data.forEach((doc) => {
+      if (doc.data().url.includes("Event/LotDetails")) {
+        if (!(doc.data().url in url_dict)) {
+          url_dict[doc.data().url] = 1;
+        } else {
+          url_dict[doc.data().url] = url_dict[doc.data().url] + 1;
+        }
+      } else if (
+        doc.data().url.includes("Event/Details") &&
+        !used_ids.includes(doc.data().url.substring(51, 58))
+      ) {
+        let auction = [0, 0];
+        let added = false;
+        let id = parseInt(doc.data().url.substring(51, 58));
+        let result = binarySearch(results, id, 0, results.length - 1);
+        if (result != false) {
+          auction[0] = result.Title;
+          auction[1] = result.Id;
+          added = true;
+        }
+        if (added) {
+          auctions.push(auction);
+          used_ids.push(doc.data().url.substring(51, 58));
+        }
+      }
+    });
+    var items = Object.keys(url_dict).map(function (key) {
+      return [key, url_dict[key]];
+    });
+    items = items.sort(function (first, second) {
+      return second[1] - first[1];
+    });
+    items.forEach((url) => {
+      let new_url =
+        url[0] == null || url[0].includes("=") ? "" : url[0].slice(62);
+      if (new_url != null && new_url.indexOf("?") != -1) {
+        new_url = new_url.substring(0, new_url.indexOf("?"));
+      }
+      if (new_url != "" && !isNaN(url[1])) {
+        table_values += "<tr>";
+        if (new_url != null && new_url.indexOf("/") != -1) {
+          new_url = new_url.substring(0, new_url.indexOf("/"));
+        }
+        table_values += `<th><a href='${url[0]}'>${new_url}</a></th>`;
+        table_values += `<th>${url[1]}</th>`;
+        table_values += "</tr>";
+      }
+    });
+    table_values += `</table><style>table { font-size: 12px; } table, th, tr { border: 1px solid black; border-collapse: collapse; font-weight: 400; } tr:first-of-type th {font-weight: bold; } </style>`;
+    let select = `<a href='/session/item-item-table'>Also Bought</a><form method='POST' ACTION='/session/popular-items'><select onchange="this.form.submit()" name="auction">
+      <option value="">All</option>`;
+    auctions.forEach((auction) => {
+      select += `<option value="${auction[1]}">${auction[0]}</option>`;
+    });
+    select += `</select></form>`;
+    res.send(select + table_values);
+  });
+});
+
+router.post("/popular-items", async (req, res) => {
+  if (req.body.auction == "") {
+    sql.connect(config, async (err) => {
+      if (err) console.log(err);
+
+      // create Request object
+      var request = new sql.Request();
+
+      // query to the database and get the records
+      let time = new Date();
+      let results = await request.query(
+        "SELECT Id, Title FROM RWX_AuctionEvents ORDER BY Id ASC"
+      );
+      let total_items = "";
+      results = results["recordset"];
+      total_items = total_items["recordset"];
+      const sessions = await firestore.collection("sessions");
+      const data = await sessions.get();
+      let table_values = "<table><tr><th>Item</th><th>Popularity</th>";
+      let url_dict = {};
+      let auctions = [];
+      let used_ids = [];
+      data.forEach((doc) => {
+        if (doc.data().url.includes("Event/LotDetails")) {
+          if (!(doc.data().url in url_dict)) {
+            url_dict[doc.data().url] = 1;
+          } else {
+            url_dict[doc.data().url] = url_dict[doc.data().url] + 1;
+          }
+        } else if (
+          doc.data().url.includes("Event/Details") &&
+          !used_ids.includes(doc.data().url.substring(51, 58))
+        ) {
+          let auction = [0, 0];
+          let added = false;
+          let id = parseInt(doc.data().url.substring(51, 58));
+          let result = binarySearch(results, id, 0, results.length - 1);
+          if (result != false) {
+            auction[0] = result.Title;
+            auction[1] = result.Id;
+            added = true;
+          }
+          if (added) {
+            auctions.push(auction);
+            used_ids.push(doc.data().url.substring(51, 58));
+          }
+        }
+      });
+      var items = Object.keys(url_dict).map(function (key) {
+        return [key, url_dict[key]];
+      });
+      items = items.sort(function (first, second) {
+        return second[1] - first[1];
+      });
+      items.forEach((url) => {
+        let new_url =
+          url[0] == null || url[0].includes("=") ? "" : url[0].slice(62);
+        if (new_url != null && new_url.indexOf("?") != -1) {
+          new_url = new_url.substring(0, new_url.indexOf("?"));
+        }
+        if (new_url != "" && !isNaN(url[1])) {
+          table_values += "<tr>";
+          if (new_url != null && new_url.indexOf("/") != -1) {
+            new_url = new_url.substring(0, new_url.indexOf("/"));
+          }
+          table_values += `<th><a href='${url[0]}'>${new_url}</a></th>`;
+          table_values += `<th>${url[1]}</th>`;
+          table_values += "</tr>";
+        }
+      });
+      table_values += `</table><style>table { font-size: 12px; } table, th, tr { border: 1px solid black; border-collapse: collapse; font-weight: 400; } tr:first-of-type th {font-weight: bold; } </style>`;
+      let select = `<a href='/session/item-item-table'>Also Bought</a><form method='POST' ACTION='/session/popular-items'><select onchange="this.form.submit()" name="auction">
+        <option value="">All</option>`;
+      auctions.forEach((auction) => {
+        select += `<option value="${auction[1]}">${auction[0]}</option>`;
+      });
+      select += `</select></form>`;
+      res.send(select + table_values);
+    });
+  } else {
+    sql.connect(config, async (err) => {
+      if (err) console.log(err);
+
+      // create Request object
+      var request = new sql.Request();
+
+      // query to the database and get the records
+      let time = new Date();
+      let results = await request.query(
+        "SELECT Id, Title FROM RWX_AuctionEvents ORDER BY Id ASC"
+      );
+      let total_items = "";
+      total_items = await request.query(
+        `SELECT listing_id FROM vw_lot_result WHERE AuctionEventID=${req.body.auction} ORDER BY listing_id ASC`
+      );
+      results = results["recordset"];
+      total_items = total_items["recordset"];
+      const sessions = await firestore.collection("sessions");
+      const data = await sessions.get();
+      let table_values = "<table><tr><th>Item</th><th>Popularity</th>";
+      let url_dict = {};
+      let auctions = [];
+      let used_ids = [];
+      data.forEach((doc) => {
+        if (doc.data().url.includes("Event/LotDetails")) {
+          if (
+            binarySearchListing(
+              total_items,
+              parseInt(doc.data().url.substring(54, 61)),
+              0,
+              total_items.length - 1
+            )
+          ) {
+            if (!(doc.data().url in url_dict)) {
+              url_dict[doc.data().url] = 1;
+            } else {
+              url_dict[doc.data().url] = url_dict[doc.data().url] + 1;
+            }
+          }
+        } else if (
+          doc.data().url.includes("Event/Details") &&
+          !used_ids.includes(doc.data().url.substring(51, 58))
+        ) {
+          let auction = [0, 0];
+          let added = false;
+          let id = parseInt(doc.data().url.substring(51, 58));
+          let result = binarySearch(results, id, 0, results.length - 1);
+          if (result != false) {
+            auction[0] = result.Title;
+            auction[1] = result.Id;
+            added = true;
+          }
+          if (added) {
+            auctions.push(auction);
+            used_ids.push(doc.data().url.substring(51, 58));
+          }
+        }
+      });
+      var items = Object.keys(url_dict).map(function (key) {
+        return [key, url_dict[key]];
+      });
+      items = items.sort(function (first, second) {
+        return second[1] - first[1];
+      });
+      items.forEach((url) => {
+        let new_url =
+          url[0] == null || url[0].includes("=") ? "" : url[0].slice(62);
+        if (new_url != null && new_url.indexOf("?") != -1) {
+          new_url = new_url.substring(0, new_url.indexOf("?"));
+        }
+        if (new_url != "" && !isNaN(url[1])) {
+          table_values += "<tr>";
+          if (new_url != null && new_url.indexOf("/") != -1) {
+            new_url = new_url.substring(0, new_url.indexOf("/"));
+          }
+          table_values += `<th><a href='${url[0]}'>${new_url}</a></th>`;
+          table_values += `<th>${url[1]}</th>`;
+          table_values += "</tr>";
+        }
+      });
+      table_values += `</table><style>table { font-size: 12px; } table, th, tr { border: 1px solid black; border-collapse: collapse; font-weight: 400; } tr:first-of-type th {font-weight: bold; } </style>`;
+      let select = `<a href='/session/item-item-table'>Also Bought</a><form method='POST' ACTION='/session/popular-items'><select onchange="this.form.submit()" name="auction">
+        <option value="">All</option>`;
+      auctions.forEach((auction) => {
+        if (req.body.auction == auction[1]) {
+          select += `<option value="${auction[1]}" selected>${auction[0]}</option>`;
+        } else {
+          select += `<option value="${auction[1]}">${auction[0]}</option>`;
+        }
+      });
+      select += `</select></form>`;
+      res.send(select + table_values);
+    });
+  }
 });
 
 function mode(array) {
