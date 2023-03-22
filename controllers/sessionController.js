@@ -25,7 +25,7 @@ const addUniqueSession = async (req, res, next) => {
       user: "Cmontgomery",
       password: "1626Wlake@mmi!",
       server: "mtb-rainworx-auction-database.database.windows.net",
-      database: "MTBAuctionHotfixDB",
+      database: "MTBAuctionHotfixDB_clone",
     };
     sql.connect(config, async (err) => {
       if (err) console.log(err);

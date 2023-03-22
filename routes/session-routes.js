@@ -287,7 +287,7 @@ router.get("/all-data", async (req, res) => {
     user: "Cmontgomery",
     password: "1626Wlake@mmi!",
     server: "mtb-rainworx-auction-database.database.windows.net",
-    database: "MTBAuctionHotfixDB",
+    database: "MTBAuctionHotfixDB_clone",
   };
   sql.connect(config, async (err) => {
     if (err) console.log(err);
@@ -644,6 +644,12 @@ router.post("/all-data", async (req, res) => {
 });
 
 router.get("/item-item-table", async (req, res) => {
+  var config = {
+    user: "Cmontgomery",
+    password: "1626Wlake@mmi!",
+    server: "mtb-rainworx-auction-database.database.windows.net",
+    database: "MTBAuctionDatabase_clone",
+  };
   sql.connect(config, async (err) => {
     if (err) console.log(err);
 
@@ -658,30 +664,30 @@ router.get("/item-item-table", async (req, res) => {
     let table_values =
       "<a href='/session/popular-items'>Popular items</a><table><tr><th>Item</th><th>1st Most Similar</th><th>Similarity</th><th>2nd Most Similar</th><th>Similarity</th><th>3rd Most Similar</th><th>Similarity</th></tr>";
     let url_array = [];
-    results.forEach((result) => {
+    for (let i = 0; i < results.length; i++) {
       if (
-        !url_array.includes(result.trackingUrl) &&
-        result.trackingUrl.includes("Event/LotDetails")
+        !url_array.includes(results[i].trackingUrl) &&
+        results[i].trackingUrl.includes("Event/LotDetails")
       ) {
         url_array.push(result.trackingUrl);
       }
-    });
-    results.forEach((result) => {
+    }
+    for (let i = 0; i < results.length; i++) {
       let sessionsArray = [];
       let pages = [];
-      results.forEach((result) => {
-        if (result.trackingUrl === url) {
-          sessionsArray.push(result.sessionId);
+      for (let j = 0; j < results.length; j++) {
+        if (results[i].trackingUrl === results[j].trackingUrl) {
+          sessionsArray.push(results[j].sessionId);
         }
-      });
-      results.forEach((result) => {
+      }
+      for (let j = 0; j < results.length; j++) {
         if (
-          sessionsArray.includes(result.sessionId) &&
-          result.trackingUrl !== url
+          sessionsArray.includes(results[j].sessionId) &&
+          results[j].trackingUrl !== results[i]
         ) {
-          pages.push(result.trackingUrl);
+          pages.push(results[j].trackingUrl);
         }
-      });
+      }
       pages = pages.filter(function (x) {
         return x.includes("Event/LotDetails");
       });
@@ -748,7 +754,7 @@ router.get("/item-item-table", async (req, res) => {
         table_values += `<th>${third_count}</th>`;
         table_values += "</tr>";
       }
-    });
+    }
     table_values +=
       "</table><style>table { font-size: 12px; } table, th, tr { border: 1px solid black; border-collapse: collapse; font-weight: 400; } tr:first-of-type th {font-weight: bold; } </style>";
     res.send(table_values);

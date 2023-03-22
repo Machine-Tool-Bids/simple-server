@@ -26,7 +26,7 @@ app.get("/", function (req, res) {
     user: "Cmontgomery",
     password: "1626Wlake@mmi!",
     server: "mtb-rainworx-auction-database.database.windows.net",
-    database: "MTBAuctionHotfixDB",
+    database: "MTBAuctionHotfixDB_clone",
   };
 
   // connect to your database
