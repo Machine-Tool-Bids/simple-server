@@ -3,6 +3,7 @@
 const firebase = require("../db");
 const Session = require("../models/session");
 const firestore = firebase.firestore();
+var sql = require("mssql");
 
 const addSession = async (req, res, next) => {
   try {
@@ -25,25 +26,45 @@ const addUniqueSession = async (req, res, next) => {
       user: "Cmontgomery",
       password: "1626Wlake@mmi!",
       server: "mtb-rainworx-auction-database.database.windows.net",
-      database: "MTBAuctionHotfixDB_clone",
+      database: "MTBAuctionDatabase_clone",
     };
+    function getSQLtimestamp() {
+      var date;
+      date = new Date();
+      date =
+        date.getUTCFullYear() +
+        "-" +
+        ("00" + (date.getUTCMonth() + 1)).slice(-2) +
+        "-" +
+        ("00" + date.getUTCDate()).slice(-2) +
+        " " +
+        ("00" + date.getUTCHours()).slice(-2) +
+        ":" +
+        ("00" + date.getUTCMinutes()).slice(-2) +
+        ":" +
+        ("00" + date.getUTCSeconds()).slice(-2) +
+        "." +
+        ("00" + date.getUTCMilliseconds()).slice(-3);
+      return date;
+    }
     sql.connect(config, async (err) => {
       if (err) console.log(err);
       // create Request object
       var request = new sql.Request();
       const sessions = await firestore.collection("sessions");
+      const date = decodeURI(`${req.query.time}`);
       let mySessions = await request.query(
-        `SELECT from dbo.ClickTracking WHERE sessionId=${req.query.time} AND trackingUrl=${req.query.url}`
+        `SELECT * from dbo.ClickTracking WHERE sessionId='${req.query.session}' AND trackingUrl=${req.query.url}`
       );
-      let changedSession = false;
-      console.log(req.query.session);
-      if (mySessions != null) {
+      console.log(mySessions);
+      if (mySessions.recordset && mySessions.recordset.length > 0) {
         await request.query(
-          `UPDATE from dbo.ClickTracking WHERE sessionId=${req.query.time} AND trackingUrl=${req.query.url} SET endTime=${req.query.time})`
+          `UPDATE dbo.ClickTracking SET endTime='${date}' WHERE sessionId='${req.query.session}' AND trackingUrl=${req.query.url}`
         );
+        res.send(mySessions);
       } else {
         await request.query(
-          `INSERT into dbo.ClickTracking (${req.query.time},${req.query.time},${req.query.user},${req.query.url},${req.query.session})`
+          `INSERT into dbo.ClickTracking (endTime, startTime, sessionId, trackingUrl, loginUser) VALUES ('${date}','${date}',${req.query.session},'${req.query.url}','${req.query.user}')`
         );
         res.send("Record saved successfuly");
       }

@@ -287,7 +287,7 @@ router.get("/all-data", async (req, res) => {
     user: "Cmontgomery",
     password: "1626Wlake@mmi!",
     server: "mtb-rainworx-auction-database.database.windows.net",
-    database: "MTBAuctionHotfixDB_clone",
+    database: "MTBAuctionDatabase_clone",
   };
   sql.connect(config, async (err) => {
     if (err) console.log(err);
