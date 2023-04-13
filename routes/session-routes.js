@@ -184,105 +184,6 @@ router.post("/check3", async (req, res) => {
 });
 
 router.get("/all-data", async (req, res) => {
-  const sessions = await firestore.collection("sessions");
-  const data = await sessions.get();
-  let table_values =
-    "<a href='/session/popular-items'>Popular items</a><table><tr><th>Item</th><th>1st Most Similar</th><th>Similarity</th><th>2nd Most Similar</th><th>Similarity</th><th>3rd Most Similar</th><th>Similarity</th></tr>";
-  let url_array = [];
-  data.forEach((doc) => {
-    if (
-      !url_array.includes(doc.data().url) &&
-      doc.data().url.includes("Event/LotDetails")
-    ) {
-      url_array.push(doc.data().url);
-    }
-  });
-  url_array.forEach((url) => {
-    let sessionsArray = [];
-    let pages = [];
-    data.forEach((doc) => {
-      if (doc.data().url === url) {
-        sessionsArray.push(doc.data().session);
-      }
-    });
-    data.forEach((doc) => {
-      if (
-        sessionsArray.includes(doc.data().session) &&
-        doc.data().url !== url
-      ) {
-        pages.push(doc.data().url);
-      }
-    });
-    pages = pages.filter(function (x) {
-      return x.includes("Event/LotDetails");
-    });
-    let first_common = "";
-    let first_count = "";
-    let second_common = "";
-    let second_count = "";
-    let third_common = "";
-    let third_count = "";
-    if (mode(pages) != null) {
-      [first_common, first_count] = mode(pages);
-    }
-    pages = pages.filter(function (x) {
-      return x !== first_common && !x.includes("=");
-    });
-    if (mode(pages) != null) {
-      [second_common, second_count] = mode(pages);
-    }
-    pages = pages.filter(function (x) {
-      return x !== second_common;
-    });
-    if (mode(pages) != null) {
-      [third_common, third_count] = mode(pages);
-    }
-    let new_url = url == null || url.includes("=") ? "" : url.slice(62);
-    let new_first_common = first_common == null ? "" : first_common.slice(62);
-    let new_second_common =
-      second_common == null ? "" : second_common.slice(62);
-    let new_third_common = third_common == null ? "" : third_common.slice(62);
-    if (
-      new_url != "" &&
-      new_first_common != "" &&
-      new_second_common != "" &&
-      new_third_common != ""
-    ) {
-      table_values += "<tr>";
-      if (new_url != null && new_url.indexOf("?") != -1) {
-        new_url = new_url.substring(0, new_url.indexOf("?"));
-      }
-      if (new_first_common.indexOf("?") != -1) {
-        new_first_common = new_first_common.substring(
-          0,
-          new_first_common.indexOf("?")
-        );
-      }
-      if (new_second_common.indexOf("?") != -1) {
-        new_second_common = new_second_common.substring(
-          0,
-          new_second_common.indexOf("?")
-        );
-      }
-      if (new_third_common.indexOf("?") != -1) {
-        new_third_common = new_third_common.substring(
-          0,
-          new_third_common.indexOf("?")
-        );
-      }
-      table_values += `<th><a href='${url}'>${new_url}</a></th>`;
-      table_values += `<th><a href='${first_common}'>${new_first_common}</a></th>`;
-      table_values += `<th>${first_count}</th>`;
-      table_values += `<th><a href='${second_common}'>${new_second_common}</a></th>`;
-      table_values += `<th>${second_count}</th>`;
-      table_values += `<th><a href='${third_common}'>${new_third_common}</a></th>`;
-      table_values += `<th>${third_count}</th>`;
-      table_values += "</tr>";
-    }
-  });
-  table_values +=
-    "</table><style>table { font-size: 12px; } table, th, tr { border: 1px solid black; border-collapse: collapse; font-weight: 400; } tr:first-of-type th {font-weight: bold; } </style>";
-  let first_values = table_values;
   var config = {
     user: "Cmontgomery",
     password: "1626Wlake@mmi!",
@@ -297,47 +198,28 @@ router.get("/all-data", async (req, res) => {
 
     // query to the database and get the records
     let time = new Date();
-    let results = await request.query(
-      "SELECT Id, Title FROM RWX_AuctionEvents ORDER BY Id ASC"
+    let all_items = await request.query(
+      "SELECT trackingUrl FROM dbo.ClickTracking"
     );
-    let total_items = "";
-    results = results["recordset"];
-    total_items = total_items["recordset"];
-    const sessions = await firestore.collection("sessions");
-    const data = await sessions.get();
+    all_items = all_items.recordset;
     let table_values = "<table><tr><th>Item</th><th>Popularity</th>";
     let url_dict = {};
-    let auctions = [];
+    let sessions = [];
     let used_ids = [];
-    data.forEach((doc) => {
-      if (doc.data().url.includes("Event/LotDetails")) {
-        if (!(doc.data().url in url_dict)) {
-          url_dict[doc.data().url] = 1;
+    all_items.forEach((doc) => {
+      console.log(`url is ${doc.trackingUrl}`)
+      if (true){//doc.trackingUrl.includes("Event/LotDetails")) {
+        if (!(doc.trackingUrl in url_dict)) {
+          url_dict[doc.trackingUrl] = 1;
         } else {
-          url_dict[doc.data().url] = url_dict[doc.data().url] + 1;
-        }
-      } else if (
-        doc.data().url.includes("Event/Details") &&
-        !used_ids.includes(doc.data().url.substring(51, 58))
-      ) {
-        let auction = [0, 0];
-        let added = false;
-        let id = parseInt(doc.data().url.substring(51, 58));
-        let result = binarySearch(results, id, 0, results.length - 1);
-        if (result != false) {
-          auction[0] = result.Title;
-          auction[1] = result.Id;
-          added = true;
-        }
-        if (added) {
-          auctions.push(auction);
-          used_ids.push(doc.data().url.substring(51, 58));
+          url_dict[doc.trackingUrl] = url_dict[doc.trackingUrl] + 1;
         }
       }
     });
     var items = Object.keys(url_dict).map(function (key) {
       return [key, url_dict[key]];
     });
+    console.log("items are " + items)
     items = items.sort(function (first, second) {
       return second[1] - first[1];
     });
@@ -347,24 +229,19 @@ router.get("/all-data", async (req, res) => {
       if (new_url != null && new_url.indexOf("?") != -1) {
         new_url = new_url.substring(0, new_url.indexOf("?"));
       }
-      if (new_url != "" && !isNaN(url[1])) {
+      /*if (new_url != "" && !isNaN(url[1])) {
         table_values += "<tr>";
         if (new_url != null && new_url.indexOf("/") != -1) {
           new_url = new_url.substring(0, new_url.indexOf("/"));
-        }
-        table_values += `<th><a href='${url[0]}'>${new_url}</a></th>`;
+        }*/
+        table_values += `<tr><th><a href='${url[0]}'>${url[0]}</a></th>`;
         table_values += `<th>${url[1]}</th>`;
         table_values += "</tr>";
-      }
+      //}
+      console.log(table_values)
     });
     table_values += `</table><style>table { font-size: 12px; } table, th, tr { border: 1px solid black; border-collapse: collapse; font-weight: 400; } tr:first-of-type th {font-weight: bold; } </style>`;
-    let select = `<a href='/session/item-item-table'>Also Bought</a><form method='POST' ACTION='/session/all-data'><select onchange="this.form.submit()" name="auction">
-      <option value="">All</option>`;
-    auctions.forEach((auction) => {
-      select += `<option value="${auction[1]}">${auction[0]}</option>`;
-    });
-    select += `</select></form>`;
-    res.send(first_values + select + table_values);
+    res.send(table_values);
   });
 });
 
