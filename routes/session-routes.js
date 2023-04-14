@@ -207,8 +207,8 @@ router.get("/all-data", async (req, res) => {
     let sessions = [];
     let used_ids = [];
     all_items.forEach((doc) => {
-      console.log(`url is ${doc.trackingUrl}`)
-      if (true){//doc.trackingUrl.includes("Event/LotDetails")) {
+      if (true) {
+        //doc.trackingUrl.includes("Event/LotDetails")) {
         if (!(doc.trackingUrl in url_dict)) {
           url_dict[doc.trackingUrl] = 1;
         } else {
@@ -219,7 +219,6 @@ router.get("/all-data", async (req, res) => {
     var items = Object.keys(url_dict).map(function (key) {
       return [key, url_dict[key]];
     });
-    console.log("items are " + items)
     items = items.sort(function (first, second) {
       return second[1] - first[1];
     });
@@ -234,11 +233,10 @@ router.get("/all-data", async (req, res) => {
         if (new_url != null && new_url.indexOf("/") != -1) {
           new_url = new_url.substring(0, new_url.indexOf("/"));
         }*/
-        table_values += `<tr><th><a href='${url[0]}'>${url[0]}</a></th>`;
-        table_values += `<th>${url[1]}</th>`;
-        table_values += "</tr>";
+      table_values += `<tr><th><a href='${url[0]}'>${url[0]}</a></th>`;
+      table_values += `<th>${url[1]}</th>`;
+      table_values += "</tr>";
       //}
-      console.log(table_values)
     });
     table_values += `</table><style>table { font-size: 12px; } table, th, tr { border: 1px solid black; border-collapse: collapse; font-weight: 400; } tr:first-of-type th {font-weight: bold; } </style>`;
     res.send(table_values);

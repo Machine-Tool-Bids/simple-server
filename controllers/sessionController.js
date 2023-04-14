@@ -53,20 +53,15 @@ const addUniqueSession = async (req, res, next) => {
       var request = new sql.Request();
       const sessions = await firestore.collection("sessions");
       const date = decodeURI(`${req.query.time}`);
-      console.log(date);
       let mySessions = await request.query(
-        `SELECT * from dbo.ClickTracking WHERE sessionId='${req.query.session}' AND trackingUrl=${req.query.url}`
+        `SELECT * from dbo.ClickTracking WHERE sessionId='${req.query.session}' AND trackingUrl='${req.query.url}'`
       );
-      console.log("1");
-      console.log(mySessions.recordset.length)
       if (mySessions.recordset && mySessions.recordset.length > 0) {
-        console.log("2")
         await request.query(
           `UPDATE dbo.ClickTracking SET endTime='${date}' WHERE sessionId='${req.query.session}' AND trackingUrl='${req.query.url}'`
         );
         res.send("Updated");
       } else {
-        console.log("3")
         await request.query(
           `INSERT into dbo.ClickTracking (endTime, startTime, sessionId, trackingUrl, loginUser) VALUES ('${date}','${date}',${req.query.session},'${req.query.url}','${req.query.user}')`
         );
