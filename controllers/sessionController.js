@@ -52,7 +52,8 @@ const addUniqueSession = async (req, res, next) => {
       // create Request object
       var request = new sql.Request();
       const sessions = await firestore.collection("sessions");
-      const date = decodeURI(`${req.query.time}`);
+      const date = "2023-04-07 16:27:59.210";
+      console.log(date)
       let mySessions = await request.query(
         `SELECT * from dbo.ClickTracking WHERE sessionId='${req.query.session}' AND trackingUrl='${req.query.url}'`
       );
