@@ -51,7 +51,6 @@ const addUniqueSession = async (req, res, next) => {
       if (err) console.log(err);
       // create Request object
       var request = new sql.Request();
-      const sessions = await firestore.collection("sessions");
       const date = "2023-04-07 16:27:59.210";
       console.log(date)
       let mySessions = await request.query(
